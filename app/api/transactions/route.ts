@@ -1,15 +1,20 @@
 import { NextResponse } from 'next/server'
 import { createTransaction, listTransactions } from '@/lib/finance'
 import { getAuthSession } from '@/lib/auth'
+import { transactionSchema, formatValidationError } from '@/lib/validation'
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await getAuthSession()
   if (!session?.user?.id) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const transactions = await listTransactions(session.user.id)
-  return NextResponse.json(transactions)
+  const { searchParams } = new URL(request.url)
+  const page = Math.max(1, Number(searchParams.get('page') ?? '1'))
+  const pageSize = Math.min(100, Math.max(1, Number(searchParams.get('pageSize') ?? '20')))
+
+  const result = await listTransactions(session.user.id, page, pageSize)
+  return NextResponse.json(result)
 }
 
 export async function POST(request: Request) {
@@ -18,14 +23,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const body = await request.json()
-  const transaction = await createTransaction(session.user.id, {
-    type: body.type,
-    amount: Number(body.amount),
-    category: body.category,
-    note: body.note,
-    date: body.date,
-  })
-
-  return NextResponse.json(transaction)
+  try {
+    const body = await request.json()
+    const data = transactionSchema.parse(body)
+    const transaction = await createTransaction(session.user.id, data)
+    return NextResponse.json(transaction)
+  } catch (error) {
+    return NextResponse.json({ error: formatValidationError(error) }, { status: 400 })
+  }
 }

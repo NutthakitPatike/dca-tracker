@@ -1,9 +1,13 @@
-const FINNHUB_API_KEY = process.env.FINNHUB_API_KEY ?? 'd73conpr01qjjol2ivs0d73conpr01qjjol2ivsg'
-
 export async function fetchMarketPrice(symbol: string): Promise<number | null> {
+  const apiKey = process.env.FINNHUB_API_KEY
+  if (!apiKey) {
+    console.warn('FINNHUB_API_KEY is not set')
+    return null
+  }
+
   const encodedSymbol = encodeURIComponent(symbol.trim().toUpperCase())
   try {
-    const url = `https://finnhub.io/api/v1/quote?symbol=${encodedSymbol}&token=${FINNHUB_API_KEY}`
+    const url = `https://finnhub.io/api/v1/quote?symbol=${encodedSymbol}&token=${apiKey}`
     const response = await fetch(url)
     if (!response.ok) {
       return null

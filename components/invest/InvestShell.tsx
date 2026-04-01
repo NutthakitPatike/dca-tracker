@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useSession, signIn } from 'next-auth/react'
+import { useSession } from 'next-auth/react'
 import type { Portfolio, Trade } from '@/types/finance'
 import PortfolioSection from '@/components/dashboard/PortfolioSection'
 import DcaAllocation from '@/components/invest/DcaAllocation'
@@ -10,35 +10,21 @@ import DcaReport from '@/components/invest/DcaReport'
 import { calculateTradeMetrics } from '@/lib/metrics'
 
 export default function InvestShell() {
-  const { data: session, status } = useSession()
+  const { status } = useSession()
   const [portfolios, setPortfolios] = useState<Portfolio[]>([])
   const [trades, setTrades] = useState<Trade[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   const loadData = async () => {
-    setError(null)
-    setLoading(true)
-
+    setError(null); setLoading(true)
     try {
-      const [portfolioRes, tradeRes] = await Promise.all([
-        fetch('/api/portfolio'),
-        fetch('/api/trades'),
-      ])
-      if (portfolioRes.status === 401 || tradeRes.status === 401) {
-        setError('กรุณาเข้าสู่ระบบก่อนดูข้อมูล')
-        setPortfolios([])
-        setTrades([])
-        return
-      }
-      const [portfolioJson, tradeJson] = await Promise.all([portfolioRes.json(), tradeRes.json()])
-      setPortfolios(portfolioJson)
-      setTrades(tradeJson)
-    } catch {
-      setError('ไม่สามารถโหลดข้อมูลพอร์ตได้ในขณะนี้')
-    } finally {
-      setLoading(false)
-    }
+      const [pRes, tRes] = await Promise.all([fetch('/api/portfolio'), fetch('/api/trades')])
+      if (pRes.status === 401 || tRes.status === 401) { setError('กรุณาเข้าสู่ระบบ'); return }
+      const [pJson, tJson] = await Promise.all([pRes.json(), tRes.json()])
+      setPortfolios(pJson); setTrades(tJson)
+    } catch { setError('โหลดข้อมูลไม่ได้') }
+    finally { setLoading(false) }
   }
 
   const refreshPrices = async () => {
@@ -47,44 +33,22 @@ export default function InvestShell() {
   }
 
   useEffect(() => {
-    if (status === 'authenticated') {
-      refreshPrices().catch(console.error)
-    }
+    if (status === 'authenticated') refreshPrices().catch(console.error)
   }, [status])
 
-  if (status === 'loading') {
-    return <div className="rounded-3xl bg-white p-8 shadow-panel">กำลังโหลด...</div>
-  }
-
-  if (!session) {
-    return (
-      <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-panel">
-        <h2 className="text-xl font-semibold text-slate-950">กรุณาเข้าสู่ระบบ</h2>
-        <p className="mt-2 text-slate-500">ลงชื่อเข้าใช้เพื่อจัดการพอร์ตลงทุน DCA ของคุณ</p>
-        <button
-          className="mt-6 rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-          onClick={() => signIn()}
-        >
-          เข้าสู่ระบบ
-        </button>
-      </div>
-    )
-  }
+  const tradeMetrics = calculateTradeMetrics(portfolios, trades)
 
   return (
-    <div className="space-y-6">
+    <div>
+      {error && (
+        <div style={{ borderRadius: 'var(--radius)', padding: '12px 16px', marginBottom: 16, fontSize: 13, border: '1px solid', background: 'var(--red2)', borderColor: 'rgba(248,113,113,0.25)', color: 'var(--red)' }}>{error}</div>
+      )}
       <DcaAllocation />
-      <div className="grid gap-6 xl:grid-cols-[0.9fr_1.1fr]">
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, margin: '16px 0' }}>
         <DcaInvestForm onSuccess={loadData} />
-        <DcaReport portfolios={portfolios} tradeMetrics={calculateTradeMetrics(portfolios, trades)} />
+        <DcaReport portfolios={portfolios} tradeMetrics={tradeMetrics} />
       </div>
-      <PortfolioSection
-        portfolios={portfolios}
-        trades={trades}
-        tradeMetrics={calculateTradeMetrics(portfolios, trades)}
-        onReload={loadData}
-        loading={loading}
-      />
+      <PortfolioSection portfolios={portfolios} trades={trades} tradeMetrics={tradeMetrics} onReload={loadData} loading={loading} />
     </div>
   )
 }

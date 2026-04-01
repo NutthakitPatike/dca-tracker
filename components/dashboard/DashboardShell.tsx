@@ -1,17 +1,15 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { signIn, signOut, useSession } from 'next-auth/react'
-import type { Portfolio, Transaction, Trade } from '@/types/finance'
+import type { Portfolio, Trade } from '@/types/finance'
 import { calculateTotals, calculatePortfolioMetrics, calculateTradeMetrics } from '@/lib/metrics'
 import SummaryCards from './SummaryCards'
 import PortfolioSection from './PortfolioSection'
 import TransactionsSection from './TransactionsSection'
-import SimpleChart from './SimpleChart'
-import ReportsSection from './ReportsSection'
+
+interface Transaction { id: string; type: 'INCOME' | 'EXPENSE'; amount: string | number; category: string; note?: string; date: string }
 
 export default function DashboardShell() {
-  const { data: session, status } = useSession()
   const [transactions, setTransactions] = useState<Transaction[]>([])
   const [portfolios, setPortfolios] = useState<Portfolio[]>([])
   const [trades, setTrades] = useState<Trade[]>([])
@@ -19,94 +17,33 @@ export default function DashboardShell() {
   const [error, setError] = useState<string | null>(null)
 
   const loadData = async () => {
-    setError(null)
-    setIsLoading(true)
-
+    setError(null); setIsLoading(true)
     try {
-      const [txRes, portfolioRes, tradeRes] = await Promise.all([
-        fetch('/api/transactions'),
-        fetch('/api/portfolio'),
-        fetch('/api/trades'),
-      ])
-
-      if (txRes.status === 401 || portfolioRes.status === 401 || tradeRes.status === 401) {
-        setError('กรุณาเข้าสู่ระบบก่อนใช้งาน')
-        setTransactions([])
-        setPortfolios([])
-        setTrades([])
-        return
-      }
-
-      const [txJson, portfolioJson, tradeJson] = await Promise.all([
-        txRes.json(),
-        portfolioRes.json(),
-        tradeRes.json(),
-      ])
-
-      setTransactions(txJson)
-      setPortfolios(portfolioJson)
-      setTrades(tradeJson)
-    } catch (fetchError) {
-      console.error(fetchError)
-      setError('ไม่สามารถโหลดข้อมูลได้ในขณะนี้')
-    } finally {
-      setIsLoading(false)
-    }
+      const [txRes, portfolioRes, tradeRes] = await Promise.all([fetch('/api/transactions?page=1&pageSize=20'), fetch('/api/portfolio'), fetch('/api/trades')])
+      if (txRes.status === 401 || portfolioRes.status === 401 || tradeRes.status === 401) { setError('กรุณาเข้าสู่ระบบ'); return }
+      const [txJson, portfolioJson, tradeJson] = await Promise.all([txRes.json(), portfolioRes.json(), tradeRes.json()])
+      setTransactions(txJson.items ?? []); setPortfolios(portfolioJson); setTrades(tradeJson)
+    } catch { setError('ไม่สามารถโหลดข้อมูลได้') }
+    finally { setIsLoading(false) }
   }
 
-  useEffect(() => {
-    if (status === 'authenticated') {
-      loadData().catch(console.error)
-    }
-  }, [status])
+  useEffect(() => { loadData().catch(console.error) }, [])
 
-  const totals = useMemo(() => calculateTotals(transactions), [transactions])
+  const totals = useMemo(() => calculateTotals(transactions as any), [transactions])
   const portfolioMetrics = useMemo(() => calculatePortfolioMetrics(portfolios, trades), [portfolios, trades])
   const tradeMetrics = useMemo(() => calculateTradeMetrics(portfolios, trades), [portfolios, trades])
 
-  if (status === 'loading') {
-    return <div className="rounded-3xl bg-white p-8 shadow-panel">กำลังโหลด...</div>
-  }
-
-  if (!session) {
-    return (
-      <div className="rounded-3xl border border-slate-200 bg-white p-8 shadow-panel">
-        <h2 className="text-xl font-semibold text-slate-950">กรุณาเข้าสู่ระบบ</h2>
-        <p className="mt-2 text-slate-500">คุณต้องเข้าสู่ระบบก่อนเพื่อดูแดชบอร์ดและข้อมูลส่วนตัวของคุณ</p>
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-          <button
-            className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
-            onClick={() => signIn()}
-          >
-            เข้าสู่ระบบ
-          </button>
-          <button
-            className="rounded-2xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-slate-50"
-            onClick={() => window.location.href = '/auth/signup'}
-          >
-            สมัครสมาชิก
-          </button>
-        </div>
-      </div>
-    )
-  }
-
   return (
-    <section className="space-y-8">
-      <div className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="text-sm text-slate-500">ยินดีต้อนรับ, {session.user?.name ?? session.user?.email}</p>
-          <h2 className="mt-2 text-2xl font-semibold text-slate-950">แดชบอร์ดส่วนตัว</h2>
-        </div>
-        <button
-          className="rounded-2xl bg-rose-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-rose-700"
-          onClick={() => signOut({ callbackUrl: '/auth/signin' })}
-        >
-          ออกจากระบบ
-        </button>
+    <div>
+      {/* Page header */}
+      <div style={{ marginBottom: 28 }}>
+        <h1 style={{ fontSize: 22, fontWeight: 700, letterSpacing: '-0.6px', marginBottom: 4 }}>ภาพรวม</h1>
+        <p style={{ fontSize: 13, color: 'var(--muted)' }}>สรุปการเงินและพอร์ตลงทุนทั้งหมด</p>
       </div>
 
-      {error && <div className="rounded-3xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">{error}</div>}
+      {error && (
+        <div style={{ borderRadius: 'var(--radius)', padding: '12px 16px', marginBottom: 16, fontSize: 13, border: '1px solid', background: 'var(--red2)', borderColor: 'rgba(248,113,113,0.25)', color: 'var(--red)' }}>{error}</div>
+      )}
 
       <SummaryCards
         totalIncome={totals.totalIncome}
@@ -115,28 +52,55 @@ export default function DashboardShell() {
         portfolioValue={portfolioMetrics.portfolioValue}
       />
 
-      <div className="grid gap-6 xl:grid-cols-[1.3fr_0.7fr]">
-        <div className="space-y-6">
-          <TransactionsSection transactions={transactions} onReload={loadData} loading={isLoading} />
+      {/* Quick snapshot */}
+      {tradeMetrics.length > 0 && (
+        <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: 22, marginBottom: 16 }}>
+          <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.9px', marginBottom: 16 }}>ETF Snapshot</p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {tradeMetrics.map((item) => {
+              const pos = item.unrealizedPnl >= 0
+              const colors: Record<string, string> = { SCHG: '#38bdf8', SMH: '#818cf8', AVUV: '#22d3a0', GLDM: '#fbbf24' }
+              const c = colors[item.symbol.toUpperCase()] ?? 'var(--accent2)'
+              return (
+                <div key={item.portfolioId} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, borderBottom: '1px solid var(--border)', paddingBottom: 12 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 9px', borderRadius: 5, fontSize: 11, fontWeight: 600, fontFamily: "'JetBrains Mono',monospace", background: `${c}22`, color: c }}>{item.symbol}</span>
+                    <strong style={{ fontSize: 14, color: 'var(--text)' }}>{item.name}</strong>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <p style={{ fontFamily: "'JetBrains Mono',monospace", fontWeight: 700, color: 'var(--text)' }}>{(item.portfolioValue).toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</p>
+                    <p style={{ fontFamily: "'JetBrains Mono',monospace", fontSize: 12, color: pos ? 'var(--green)' : 'var(--red)' }}>{pos ? '+' : ''}{item.returnPct.toFixed(2)}%</p>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
         </div>
+      )}
 
-        <div className="space-y-6">
-          <PortfolioSection
-            portfolios={portfolios}
-            trades={trades}
-            tradeMetrics={tradeMetrics}
-            onReload={loadData}
-            loading={isLoading}
-          />
+      {/* Recent transactions preview */}
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)', padding: 22 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.9px' }}>รายการล่าสุด</p>
+          <a href="/finance/transactions" style={{ fontSize: 12, color: 'var(--accent2)', textDecoration: 'none' }}>ดูทั้งหมด →</a>
         </div>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+          <tbody>
+            {transactions.slice(0, 5).map((tx) => (
+              <tr key={tx.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                <td style={{ padding: '10px 12px', fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: 'var(--muted)' }}>{new Date(tx.date).toLocaleDateString('th-TH')}</td>
+                <td style={{ padding: '10px 12px', color: 'var(--text2)' }}>{tx.category}</td>
+                <td style={{ padding: '10px 12px', textAlign: 'right', fontFamily: "'JetBrains Mono',monospace", fontWeight: 600, color: tx.type === 'INCOME' ? 'var(--green)' : 'var(--red)' }}>
+                  {tx.type === 'INCOME' ? '+' : '−'}{Number(tx.amount).toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+                </td>
+              </tr>
+            ))}
+            {transactions.length === 0 && !isLoading && (
+              <tr><td colSpan={3} style={{ padding: '24px 12px', textAlign: 'center', color: 'var(--muted)' }}>ยังไม่มีรายการ</td></tr>
+            )}
+          </tbody>
+        </table>
       </div>
-
-      <ReportsSection transactions={transactions} portfolios={portfolios} />
-
-      <div className="grid gap-6 md:grid-cols-2">
-        <SimpleChart label="รายรับ vs รายจ่าย" primary={totals.totalIncome} secondary={totals.totalExpense} />
-        <SimpleChart label="มูลค่าพอร์ต" primary={portfolioMetrics.portfolioValue} secondary={totals.netBalance} />
-      </div>
-    </section>
+    </div>
   )
 }

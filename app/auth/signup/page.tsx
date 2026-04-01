@@ -2,99 +2,57 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+
+const inp: React.CSSProperties = { background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 'var(--radius)', padding: '10px 14px', color: 'var(--text)', fontSize: 13, outline: 'none', width: '100%' }
+const lbl: React.CSSProperties = { fontSize: 11, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase' as const, letterSpacing: '0.7px' }
 
 export default function SignUpPage() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const router = useRouter()
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    setError(null)
-    setSuccess(null)
-    setIsSubmitting(true)
-
-    const response = await fetch('/api/auth/signup', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, email, password }),
-    })
-
-    const result = await response.json()
-    setIsSubmitting(false)
-
-    if (!response.ok) {
-      setError(result.error ?? 'ไม่สามารถสมัครสมาชิกได้')
-      return
-    }
-
-    setSuccess('สมัครสมาชิกเรียบร้อยแล้ว! ไปยังหน้าล็อกอินต่อ')
-    setTimeout(() => router.push('/auth/signin'), 1200)
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault(); setLoading(true); setError('')
+    try {
+      const res = await fetch('/api/auth/signup', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name, email, password }) })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'สมัครไม่ได้')
+      window.location.href = '/auth/signin'
+    } catch (err) { setError(err instanceof Error ? err.message : 'เกิดข้อผิดพลาด') }
+    finally { setLoading(false) }
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900">
-      <div className="mx-auto max-w-md px-4 py-20 sm:px-6">
-        <div className="rounded-3xl bg-white p-8 shadow-panel">
-          <h1 className="text-2xl font-semibold text-slate-950">สมัครสมาชิก DCAport</h1>
-          <p className="mt-2 text-sm text-slate-500">สร้างบัญชีใหม่เพื่อเริ่มติดตามการเงินและการลงทุนของคุณ</p>
-
-          <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
-            <div>
-              <label className="block text-sm font-medium text-slate-700">ชื่อ</label>
-              <input
-                type="text"
-                value={name}
-                onChange={(event) => setName(event.target.value)}
-                className="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700">อีเมล</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                className="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700">รหัสผ่าน</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                className="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm"
-                required
-              />
-            </div>
-
-            {error && <p className="text-sm text-rose-600">{error}</p>}
-            {success && <p className="text-sm text-emerald-600">{success}</p>}
-
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50"
-            >
-              {isSubmitting ? 'กำลังสมัครสมาชิก…' : 'สมัครสมาชิก'}
-            </button>
-          </form>
-
-          <p className="mt-6 text-center text-sm text-slate-500">
-            มีบัญชีแล้ว?{' '}
-            <Link href="/auth/signin" className="font-semibold text-sky-600 hover:text-sky-700">
-              เข้าสู่ระบบ
-            </Link>
-          </p>
+    <main style={{ minHeight: '100vh', background: 'var(--bg)', backgroundImage: 'radial-gradient(ellipse at 30% 20%, rgba(99,102,241,0.08) 0%, transparent 50%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 20, padding: '44px 36px', width: '100%', maxWidth: 380, boxShadow: '0 30px 80px rgba(0,0,0,0.35)' }}>
+        <div style={{ marginBottom: 28, textAlign: 'center' }}>
+          <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-1px', marginBottom: 6, background: 'linear-gradient(135deg, #818cf8, #22d3a0)', WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>DCAport</div>
+          <p style={{ fontSize: 13, color: 'var(--text2)' }}>สร้างบัญชีใหม่</p>
         </div>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label style={lbl}>ชื่อ</label>
+            <input style={inp} value={name} onChange={(e) => setName(e.target.value)} placeholder="ชื่อของคุณ" required />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label style={lbl}>อีเมล</label>
+            <input style={inp} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label style={lbl}>รหัสผ่าน</label>
+            <input style={inp} type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="อย่างน้อย 6 ตัวอักษร" minLength={6} required />
+          </div>
+          {error && <p style={{ fontSize: 12, color: 'var(--red)', background: 'var(--red2)', padding: '8px 12px', borderRadius: 6 }}>{error}</p>}
+          <button type="submit" disabled={loading} style={{ padding: '11px 18px', borderRadius: 'var(--radius)', fontSize: 13, fontWeight: 600, cursor: 'pointer', background: 'var(--accent)', color: '#fff', border: 'none', boxShadow: '0 1px 10px rgba(99,102,241,0.3)', opacity: loading ? 0.5 : 1, marginTop: 4 }}>
+            {loading ? '⟳ กำลังสมัคร…' : 'สมัครสมาชิก'}
+          </button>
+        </form>
+        <p style={{ marginTop: 20, textAlign: 'center', fontSize: 12, color: 'var(--muted)' }}>
+          มีบัญชีแล้ว?{' '}
+          <Link href="/auth/signin" style={{ color: 'var(--accent2)', textDecoration: 'none' }}>เข้าสู่ระบบ</Link>
+        </p>
       </div>
     </main>
   )

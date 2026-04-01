@@ -42,15 +42,20 @@ export function calculateTradeMetrics(portfolios: Portfolio[], trades: Trade[]) 
     const averageCost = totalQuantity > 0 ? totalCost / totalQuantity : 0
     const currentPrice = parseDecimal(portfolio.currentPrice)
     const portfolioValue = currentPrice * totalQuantity
+    const unrealizedPnl = portfolioValue - totalCost
+    const returnPct = totalCost > 0 ? (unrealizedPnl / totalCost) * 100 : 0
 
     return {
       portfolioId: portfolio.id,
       symbol: portfolio.symbol,
       name: portfolio.name,
       totalQuantity,
+      totalCost,
       averageCost,
       portfolioValue,
       currentPrice,
+      unrealizedPnl,
+      returnPct,
       tradeCount: portfolioTrades.length,
     }
   })

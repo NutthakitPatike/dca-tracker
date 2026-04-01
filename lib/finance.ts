@@ -1,13 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import type { TransactionType } from '@/types/finance'
 import { fetchMarketPrice } from '@/lib/prices'
-
-const dcaAllocations = [
-  { symbol: 'SCHG', weight: 0.4, name: 'Schwab U.S. Large-Cap Growth ETF' },
-  { symbol: 'SMH', weight: 0.3, name: 'VanEck Semiconductor ETF' },
-  { symbol: 'AVUV', weight: 0.2, name: 'Avantis U.S. Small Cap Value ETF' },
-  { symbol: 'GLDM', weight: 0.1, name: 'SPDR Gold MiniShares Trust' },
-]
+import { dcaAllocations } from '@/lib/config'
 
 export async function getUserByEmail(email: string) {
   return prisma.user.findUnique({ where: { email } })
@@ -17,11 +11,18 @@ export async function getUserById(id: string) {
   return prisma.user.findUnique({ where: { id } })
 }
 
-export async function listTransactions(userId: string) {
-  return prisma.transaction.findMany({
-    where: { userId },
-    orderBy: { date: 'desc' },
-  })
+export async function listTransactions(userId: string, page = 1, pageSize = 20) {
+  const skip = (page - 1) * pageSize
+  const [items, total] = await Promise.all([
+    prisma.transaction.findMany({
+      where: { userId },
+      orderBy: { date: 'desc' },
+      skip,
+      take: pageSize,
+    }),
+    prisma.transaction.count({ where: { userId } }),
+  ])
+  return { items, total, page, pageSize, totalPages: Math.ceil(total / pageSize) }
 }
 
 export async function createTransaction(userId: string, data: {
@@ -162,21 +163,19 @@ export async function deleteTrade(id: string, userId: string) {
 
 export async function refreshPortfolioPrices(userId: string) {
   const portfolios = await prisma.portfolio.findMany({ where: { userId } })
-  const updates = [] as Promise<unknown>[]
 
-  for (const portfolio of portfolios) {
-    const price = await fetchMarketPrice(portfolio.symbol)
-    if (price !== null) {
-      updates.push(
-        prisma.portfolio.update({
+  await Promise.all(
+    portfolios.map(async (portfolio) => {
+      const price = await fetchMarketPrice(portfolio.symbol)
+      if (price !== null) {
+        await prisma.portfolio.update({
           where: { id: portfolio.id },
           data: { currentPrice: price },
-        }),
-      )
-    }
-  }
+        })
+      }
+    }),
+  )
 
-  await Promise.all(updates)
   return prisma.portfolio.findMany({ where: { userId }, orderBy: { createdAt: 'desc' } })
 }
 

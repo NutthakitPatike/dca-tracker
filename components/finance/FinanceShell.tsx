@@ -1,41 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useSession, signIn } from 'next-auth/react'
-import type { Transaction } from '@/types/finance'
 import TransactionsSection from '@/components/dashboard/TransactionsSection'
 
 export default function FinanceShell() {
   const { data: session, status } = useSession()
-  const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  const loadTransactions = async () => {
-    setError(null)
-    setLoading(true)
-
-    try {
-      const response = await fetch('/api/transactions')
-      if (response.status === 401) {
-        setError('กรุณาเข้าสู่ระบบก่อนดูข้อมูล')
-        setTransactions([])
-        return
-      }
-      const data = await response.json()
-      setTransactions(data)
-    } catch {
-      setError('ไม่สามารถโหลดรายการได้ในขณะนี้')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    if (status === 'authenticated') {
-      loadTransactions().catch(console.error)
-    }
-  }, [status])
+  const [loading, setLoading] = useState(false)
 
   if (status === 'loading') {
     return <div className="rounded-3xl bg-white p-8 shadow-panel">กำลังโหลด...</div>
@@ -56,5 +27,5 @@ export default function FinanceShell() {
     )
   }
 
-  return <TransactionsSection transactions={transactions} loading={loading} onReload={loadTransactions} />
+  return <TransactionsSection loading={loading} onReload={async () => {}} />
 }

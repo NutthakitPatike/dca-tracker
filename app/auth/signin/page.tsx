@@ -3,84 +3,48 @@
 import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+
+const inp: React.CSSProperties = { background: 'var(--surface2)', border: '1px solid var(--border2)', borderRadius: 'var(--radius)', padding: '10px 14px', color: 'var(--text)', fontSize: 13, outline: 'none', width: '100%', transition: 'border-color 0.15s, box-shadow 0.15s' }
+const lbl: React.CSSProperties = { fontSize: 11, fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase' as const, letterSpacing: '0.7px' }
 
 export default function SignInPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const router = useRouter()
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-    setIsSubmitting(true)
-    setError(null)
-
-    const result = await signIn('credentials', {
-      redirect: false,
-      email,
-      password,
-    })
-
-    setIsSubmitting(false)
-
-    if (result?.error) {
-      setError('อีเมลหรือรหัสผ่านไม่ถูกต้อง')
-      return
-    }
-
-    router.push('/')
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault(); setLoading(true); setError('')
+    const result = await signIn('credentials', { email, password, redirect: false })
+    if (result?.error) { setError('อีเมลหรือรหัสผ่านไม่ถูกต้อง'); setLoading(false) }
+    else window.location.href = '/finance'
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-900">
-      <div className="mx-auto max-w-md px-4 py-20 sm:px-6">
-        <div className="rounded-3xl bg-white p-8 shadow-panel">
-          <h1 className="text-2xl font-semibold text-slate-950">เข้าสู่ระบบ DCAport</h1>
-          <p className="mt-2 text-sm text-slate-500">ใช้บัญชีของคุณเพื่อจัดการรายรับ รายจ่าย และพอร์ตลงทุน</p>
-
-          <form className="mt-8 space-y-4" onSubmit={handleSubmit}>
-            <div>
-              <label className="block text-sm font-medium text-slate-700">อีเมล</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                className="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-700">รหัสผ่าน</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                className="mt-2 w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm"
-                required
-              />
-            </div>
-
-            {error && <p className="text-sm text-rose-600">{error}</p>}
-
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="w-full rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50"
-            >
-              {isSubmitting ? 'กำลังเข้าสู่ระบบ…' : 'เข้าสู่ระบบ'}
-            </button>
-          </form>
-
-          <p className="mt-6 text-center text-sm text-slate-500">
-            ยังไม่มีบัญชี?{' '}
-            <Link href="/auth/signup" className="font-semibold text-sky-600 hover:text-sky-700">
-              สมัครสมาชิก
-            </Link>
-          </p>
+    <main style={{ minHeight: '100vh', background: 'var(--bg)', backgroundImage: 'radial-gradient(ellipse at 30% 20%, rgba(99,102,241,0.08) 0%, transparent 50%)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border2)', borderRadius: 20, padding: '44px 36px', width: '100%', maxWidth: 380, boxShadow: '0 30px 80px rgba(0,0,0,0.35)' }}>
+        <div style={{ marginBottom: 28, textAlign: 'center' }}>
+          <div style={{ fontSize: 26, fontWeight: 700, letterSpacing: '-1px', marginBottom: 6, background: 'linear-gradient(135deg, #818cf8, #22d3a0)', WebkitBackgroundClip: 'text', backgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>DCAport</div>
+          <p style={{ fontSize: 13, color: 'var(--text2)' }}>เข้าสู่ระบบเพื่อดำเนินการต่อ</p>
         </div>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label style={lbl}>อีเมล</label>
+            <input style={inp} type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" required />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label style={lbl}>รหัสผ่าน</label>
+            <input style={inp} type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" required />
+          </div>
+          {error && <p style={{ fontSize: 12, color: 'var(--red)', background: 'var(--red2)', padding: '8px 12px', borderRadius: 6 }}>{error}</p>}
+          <button type="submit" disabled={loading} style={{ padding: '11px 18px', borderRadius: 'var(--radius)', fontSize: 13, fontWeight: 600, cursor: 'pointer', background: 'var(--accent)', color: '#fff', border: 'none', boxShadow: '0 1px 10px rgba(99,102,241,0.3)', opacity: loading ? 0.5 : 1, marginTop: 4 }}>
+            {loading ? '⟳ กำลังเข้าสู่ระบบ…' : 'เข้าสู่ระบบ'}
+          </button>
+        </form>
+        <p style={{ marginTop: 20, textAlign: 'center', fontSize: 12, color: 'var(--muted)' }}>
+          ยังไม่มีบัญชี?{' '}
+          <Link href="/auth/signup" style={{ color: 'var(--accent2)', textDecoration: 'none' }}>สมัครสมาชิก</Link>
+        </p>
       </div>
     </main>
   )

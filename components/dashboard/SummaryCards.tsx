@@ -7,27 +7,35 @@ interface SummaryCardsProps {
   portfolioValue: number
 }
 
-const cardStyles = 'rounded-3xl border border-slate-200 bg-white p-6 shadow-sm'
+function Metric({ label, value, sub, color }: { label: string; value: string; sub?: string; color?: string }) {
+  return (
+    <div style={{
+      background: 'var(--surface)',
+      border: '1px solid var(--border)',
+      borderRadius: 'var(--radius-lg)',
+      padding: '18px 20px',
+      position: 'relative',
+      overflow: 'hidden',
+      transition: 'border-color 0.15s',
+    }}
+    onMouseEnter={(e) => (e.currentTarget.style.borderColor = 'var(--border3)')}
+    onMouseLeave={(e) => (e.currentTarget.style.borderColor = 'var(--border)')}
+    >
+      <div style={{ position: 'absolute', top: 0, right: 0, width: 60, height: 60, background: 'radial-gradient(circle at top right, rgba(99,102,241,0.06), transparent 70%)', pointerEvents: 'none' }} />
+      <p style={{ fontSize: 11, color: 'var(--muted)', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 10 }}>{label}</p>
+      <p style={{ fontFamily: "'JetBrains Mono', monospace", fontSize: 24, fontWeight: 700, letterSpacing: '-0.8px', lineHeight: 1, marginBottom: 6, color: color ?? 'var(--text)' }}>{value}</p>
+      {sub && <p style={{ fontSize: 11, color: 'var(--muted)' }}>{sub}</p>}
+    </div>
+  )
+}
 
 export default function SummaryCards({ totalIncome, totalExpense, netBalance, portfolioValue }: SummaryCardsProps) {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-      <div className={cardStyles}>
-        <p className="text-sm uppercase tracking-[0.24em] text-slate-500">รายรับรวม</p>
-        <p className="mt-4 text-3xl font-semibold text-slate-950">{formatMoney(totalIncome)}</p>
-      </div>
-      <div className={cardStyles}>
-        <p className="text-sm uppercase tracking-[0.24em] text-slate-500">รายจ่ายรวม</p>
-        <p className="mt-4 text-3xl font-semibold text-slate-950">{formatMoney(totalExpense)}</p>
-      </div>
-      <div className={cardStyles}>
-        <p className="text-sm uppercase tracking-[0.24em] text-slate-500">ยอดคงเหลือ</p>
-        <p className="mt-4 text-3xl font-semibold text-slate-950">{formatMoney(netBalance)}</p>
-      </div>
-      <div className={cardStyles}>
-        <p className="text-sm uppercase tracking-[0.24em] text-slate-500">มูลค่าพอร์ต</p>
-        <p className="mt-4 text-3xl font-semibold text-slate-950">{formatMoney(portfolioValue)}</p>
-      </div>
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 20 }}>
+      <Metric label="รายรับรวม" value={formatMoney(totalIncome)} color="var(--green)" />
+      <Metric label="รายจ่ายรวม" value={formatMoney(totalExpense)} color="var(--red)" />
+      <Metric label="ยอดคงเหลือ" value={formatMoney(netBalance)} color={netBalance >= 0 ? 'var(--green)' : 'var(--red)'} />
+      <Metric label="มูลค่าพอร์ต" value={formatMoney(portfolioValue)} color="var(--accent2)" />
     </div>
   )
 }
