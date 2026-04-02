@@ -43,9 +43,11 @@ function MetricDual({ label, value, sub, color }: { label: string; value: number
   )
 }
 
-const PieTooltip = ({ active, payload }: any) => {
+// ✅ FIX: รับ rate เป็น prop แทนการเรียก useExchangeRate() ข้างใน
+// เดิมผิด Rules of Hooks เพราะ PieTooltip ถูก define นอก component หลัก
+// แต่เรียก hook ข้างใน ซึ่ง React ไม่อนุญาต
+function PieTooltip({ active, payload, rate }: { active?: boolean; payload?: any[]; rate: number }) {
   if (!active || !payload?.length) return null
-  const { rate } = useExchangeRate()
   const { USD, THB } = formatMoneyDualSync(payload[0].value, rate)
   return (
     <div style={{ background: 'var(--bg)', border: '1px solid var(--border)', padding: '8px 12px', fontSize: 12, fontFamily: "'JetBrains Mono',monospace", color: 'var(--text)' }}>
@@ -473,7 +475,8 @@ export default function InvestShell() {
                       <Pie data={tradeMetrics.map(m => ({ name: m.symbol, value: m.portfolioValue }))} cx="50%" cy="50%" innerRadius={32} outerRadius={56} paddingAngle={3} dataKey="value">
                         {tradeMetrics.map((m) => <Cell key={m.symbol} fill={getColor(m.symbol)} />)}
                       </Pie>
-                      <Tooltip content={<PieTooltip />} />
+                      {/* ✅ FIX: pass rate as prop แทนการใช้ hook ข้างใน */}
+                      <Tooltip content={<PieTooltip rate={rate} />} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>

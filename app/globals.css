@@ -30,27 +30,30 @@
   --sidebar-w: 220px;
 }
 
+/* ✅ FIX: dark mode semantic colors
+   เดิม --green ถูก set เป็น #4da6d8 (ฟ้า) ซึ่งเหมือน --accent ทำให้สับสน
+   แก้ให้ --green เป็นเขียว, --amber เป็นทอง, --accent แยกชัดเจน */
 [data-theme="dark"] {
   --bg:        #0a0a0a;
-  --bg2:       #1a1a1a;
+  --bg2:       #141414;
   --surface:   #1a1a1a;
-  --surface2:  #2a2a2a;
-  --surface3:  #333333;
-  --border:    #333333;
-  --border2:   #404040;
-  --border3:   #555555;
-  --text:      #ffffff;
-  --text2:     #cccccc;
-  --muted:     #888888;
-  --accent:    #4da6d8;
-  --accent2:   #4da6d8;
-  --accent-light: rgba(77,166,216,0.15);
-  --green:     #4da6d8;
-  --green2:    rgba(77,166,216,0.15);
-  --red:       #ff6b6b;
-  --red2:      rgba(255,107,107,0.15);
-  --amber:     #ffd93d;
-  --amber2:    rgba(255,217,61,0.15);
+  --surface2:  #242424;
+  --surface3:  #2e2e2e;
+  --border:    #2a2a2a;
+  --border2:   #363636;
+  --border3:   #484848;
+  --text:      #f0f0f0;
+  --text2:     #b8b8b8;
+  --muted:     #6b6b6b;
+  --accent:    #38a8e0;
+  --accent2:   #38a8e0;
+  --accent-light: rgba(56,168,224,0.12);
+  --green:     #4ade80;
+  --green2:    rgba(74,222,128,0.10);
+  --red:       #f87171;
+  --red2:      rgba(248,113,113,0.12);
+  --amber:     #fbbf24;
+  --amber2:    rgba(251,191,36,0.12);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -76,8 +79,71 @@ body {
 input, textarea, button, select { font-family: 'Inter', sans-serif; }
 button { cursor: pointer; }
 
+/* ─── Utility classes ────────────────────────────────────────────
+   ✅ เพิ่มใหม่: แทนการเขียน inline style ซ้ำๆ ทุก component
+──────────────────────────────────────────────────────────────── */
+
+.label-xs {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.metric-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+.metric-value-md {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  line-height: 1;
+}
+
+.card-panel {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 20px 24px;
+}
+
+.card-panel-lg {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  padding: 24px;
+}
+
+.badge-in {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--green2);
+  color: var(--green);
+}
+
+.badge-out {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--red2);
+  color: var(--red);
+}
+
+/* ─── Skeleton loading ─────────────────────────────────────────── */
 @keyframes shimmer {
-  0% { background-position: -200% 0; }
+  0%   { background-position: -200% 0; }
   100% { background-position: 200% 0; }
 }
 .skeleton {
@@ -87,6 +153,77 @@ button { cursor: pointer; }
   border-radius: 0;
 }
 
+/* ─── Toast notification ─────────────────────────────────────────
+   ✅ เพิ่มใหม่: สำหรับ components/ui/Toast.tsx
+──────────────────────────────────────────────────────────────── */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+@media (max-width: 768px) {
+  .toast-container {
+    bottom: calc(64px + env(safe-area-inset-bottom, 0px));
+    right: 12px;
+    left: 12px;
+  }
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--text);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  pointer-events: auto;
+  animation: toast-in 0.2s ease;
+  min-width: 220px;
+  max-width: 360px;
+}
+
+.toast.toast-success { border-left: 3px solid var(--green); }
+.toast.toast-error   { border-left: 3px solid var(--red); }
+.toast.toast-info    { border-left: 3px solid var(--accent); }
+
+.toast-icon    { font-size: 14px; flex-shrink: 0; }
+.toast-message { flex: 1; line-height: 1.4; }
+
+.toast-close {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes toast-out {
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(8px); }
+}
+
+.toast.removing {
+  animation: toast-out 0.2s ease forwards;
+}
+
+/* ─── Responsive layout ──────────────────────────────────────── */
 @media (max-width: 1024px) {
   :root { --sidebar-w: 180px; }
 }
@@ -94,20 +231,33 @@ button { cursor: pointer; }
 @media (max-width: 768px) {
   :root { --sidebar-w: 0px; }
 
-  .app-layout { flex-direction: column; }
+  .app-layout  { flex-direction: column; }
   .app-sidebar { display: none; }
-  .app-main { padding: 16px !important; }
+  .app-main    { padding: 16px !important; }
 
-  .grid-4 { grid-template-columns: repeat(2, 1fr) !important; }
-  .grid-main { grid-template-columns: 1fr !important; }
-  .grid-forms { grid-template-columns: 1fr !important; }
+  .grid-4       { grid-template-columns: repeat(2, 1fr) !important; }
+  .grid-main    { grid-template-columns: 1fr !important; }
+  .grid-forms   { grid-template-columns: 1fr !important; }
   .grid-finance { grid-template-columns: 1fr !important; }
+
+  /* ✅ FIX: table mobile responsive — ซ่อน column หมายเหตุ + เพิ่ม scroll */
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .table-responsive table {
+    min-width: 480px;
+  }
+
+  .col-note { display: none; }
 }
 
 @media (max-width: 480px) {
   .grid-4 { grid-template-columns: 1fr !important; }
 }
 
+/* ─── Mobile nav bar ─────────────────────────────────────────── */
 .mobile-nav {
   display: none;
   position: fixed;
@@ -138,10 +288,11 @@ button { cursor: pointer; }
 }
 .mobile-nav a.active { color: var(--accent); }
 
+/* ─── Confirm dialog ─────────────────────────────────────────── */
 .confirm-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.3);
+  background: rgba(0,0,0,0.35);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -155,6 +306,7 @@ button { cursor: pointer; }
   width: calc(100% - 32px);
 }
 
+/* ─── Reduced motion ─────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

@@ -101,7 +101,11 @@ export default function DashboardShell() {
       if (tx.type === 'INCOME') months[key].income += Number(tx.amount)
       else months[key].expense += Number(tx.amount)
     })
-    return Object.values(months).slice(-6).reverse()
+    // ✅ FIX: sort by key (YYYY-MM) ก่อนเสมอ เพื่อให้เดือนเรียงถูกทิศ
+    return Object.entries(months)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .slice(-6)
+      .map(([, v]) => v)
   }, [transactions])
 
   const totalPnl = tradeMetrics.reduce((s, m) => s + m.unrealizedPnl, 0)
@@ -217,11 +221,13 @@ export default function DashboardShell() {
         {transactions.length === 0 && !loading ? (
           <p style={{ fontSize: 13, color: 'var(--muted)', padding: '16px 0', textAlign: 'center' }}>ยังไม่มีรายการ — <a href="/finance/transactions" style={{ color: 'var(--accent)', textDecoration: 'none' }}>เพิ่มรายการแรก</a></p>
         ) : (
+          // ✅ FIX: .table-responsive ให้ scroll ใน mobile, .col-note ซ่อนใน mobile ผ่าน globals.css
+          <div className="table-responsive">
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr style={{ borderBottom: '1px solid var(--border2)' }}>
                 {['วันที่', 'หมวดหมู่', 'หมายเหตุ', 'ประเภท', 'จำนวนเงิน'].map((h) => (
-                  <th key={h} style={{ textAlign: h === 'จำนวนเงิน' ? 'right' : 'left', fontSize: 10, fontWeight: 600, color: 'var(--muted)', padding: '0 12px 10px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{h}</th>
+                  <th key={h} className={h === 'หมายเหตุ' ? 'col-note' : undefined} style={{ textAlign: h === 'จำนวนเงิน' ? 'right' : 'left', fontSize: 10, fontWeight: 600, color: 'var(--muted)', padding: '0 12px 10px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -230,7 +236,7 @@ export default function DashboardShell() {
                 <tr key={tx.id} style={{ borderBottom: '1px solid var(--border)' }}>
                   <td style={{ padding: '10px 12px', fontFamily: "'JetBrains Mono',monospace", fontSize: 11, color: 'var(--muted)' }}>{new Date(tx.date).toLocaleDateString('th-TH')}</td>
                   <td style={{ padding: '10px 12px', color: 'var(--text2)' }}>{tx.category}</td>
-                  <td style={{ padding: '10px 12px', color: 'var(--muted)', fontSize: 12, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.note || '—'}</td>
+                  <td className="col-note" style={{ padding: '10px 12px', color: 'var(--muted)', fontSize: 12, maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.note || '—'}</td>
                   <td style={{ padding: '10px 12px' }}>
                     <span style={{ display: 'inline-flex', alignItems: 'center', padding: '2px 8px', fontSize: 11, fontWeight: 600, fontFamily: "'JetBrains Mono',monospace", background: tx.type === 'INCOME' ? 'var(--green2)' : 'var(--red2)', color: tx.type === 'INCOME' ? 'var(--green)' : 'var(--red)' }}>
                       {tx.type === 'INCOME' ? 'IN' : 'OUT'}
@@ -243,6 +249,7 @@ export default function DashboardShell() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>
