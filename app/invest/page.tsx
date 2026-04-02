@@ -1,10 +1,5 @@
-import AppShell from '@/components/layout/AppShell'
-import InvestShell from '@/components/invest/InvestShell'
+import { redirect } from 'next/navigation'
 
 export default function InvestPage() {
-  return (
-    <AppShell>
-      <InvestShell />
-    </AppShell>
-  )
+  redirect('/invest/dashboard')
 }

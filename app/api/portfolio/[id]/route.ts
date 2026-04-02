@@ -9,7 +9,7 @@ export async function PATCH(request: Request, { params }: { params: { id: string
   }
 
   const body = await request.json()
-  const portfolio = await updatePortfolio(session.user.id, params.id, {
+  const portfolio = await updatePortfolio(params.id, session.user.id, {
     name: body.name,
     symbol: body.symbol,
     currentPrice: body.currentPrice !== undefined ? Number(body.currentPrice) : undefined,
@@ -23,6 +23,6 @@ export async function DELETE(_request: Request, { params }: { params: { id: stri
     return new NextResponse(null, { status: 401 })
   }
 
-  await deletePortfolio(session.user.id, params.id)
+  await deletePortfolio(params.id, session.user.id)
   return new NextResponse(null, { status: 204 })
 }

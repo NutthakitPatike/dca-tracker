@@ -61,10 +61,29 @@ export function calculateTradeMetrics(portfolios: Portfolio[], trades: Trade[]) 
   })
 }
 
-export function formatMoney(value: number) {
-  return new Intl.NumberFormat('en-US', {
+export function formatMoney(value: number, currency: 'USD' | 'THB' = 'USD') {
+  return new Intl.NumberFormat(currency === 'THB' ? 'th-TH' : 'en-US', {
     style: 'currency',
-    currency: 'USD',
+    currency,
     maximumFractionDigits: 2,
   }).format(value)
+}
+
+export async function formatMoneyDual(value: number): Promise<{ USD: string; THB: string }> {
+  // Import dynamically to avoid circular dependency
+  const { getExchangeRate } = await import('./exchange-rate')
+  const rate = await getExchangeRate()
+  
+  return {
+    USD: formatMoney(value, 'USD'),
+    THB: formatMoney(value * rate, 'THB')
+  }
+}
+
+// Synchronous version for components that can't wait
+export function formatMoneyDualSync(value: number, fallbackRate: number = 35): { USD: string; THB: string } {
+  return {
+    USD: formatMoney(value, 'USD'),
+    THB: formatMoney(value * fallbackRate, 'THB')
+  }
 }

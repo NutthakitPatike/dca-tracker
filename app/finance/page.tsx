@@ -1,10 +1,5 @@
-import AppShell from '@/components/layout/AppShell'
-import DashboardShell from '@/components/dashboard/DashboardShell'
+import { redirect } from 'next/navigation'
 
 export default function FinancePage() {
-  return (
-    <AppShell>
-      <DashboardShell />
-    </AppShell>
-  )
+  redirect('/finance/dashboard')
 }

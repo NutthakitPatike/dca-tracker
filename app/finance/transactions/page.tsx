@@ -1,10 +1,4 @@
-import AppShell from '@/components/layout/AppShell'
-import TransactionsShell from '@/components/dashboard/TransactionsShell'
-
+import { redirect } from 'next/navigation'
 export default function TransactionsPage() {
-  return (
-    <AppShell>
-      <TransactionsShell />
-    </AppShell>
-  )
+  redirect('/finance')
 }
